@@ -52,6 +52,7 @@ type AuthOptions struct {
 	CaCertPath     string `json:"CaCertPath"`
 	ClientCertPath string `json:"ClientCertPath"`
 	ClientKeyPath  string `json:"ClientKeyPath"`
+	StorePath      string `json:"StorePath"`
 }
 
 // HostOptions is included in a result of `docker-machine inspect`
@@ -189,4 +190,28 @@ func (dm *DockerMachine) Client(name string) (*client.Client, error) {
 	}
 	apiVersion := client.DefaultVersion
 	return dm.client(machine, config, apiVersion)
+}
+
+// Env returns string map that contains DOCKER_{TLS_VERIFY,HOST,CERT_PATH,MACHINE_NAME}
+func (dm *DockerMachine) Env(name string) (map[string]string, error) {
+	env := make(map[string]string, 0)
+	machine, err := dm.Machine(name)
+	if err != nil {
+		return nil, err
+	}
+	config, err := dm.Inspect(name)
+	if err != nil {
+		return nil, err
+	}
+	eopt := config.HostOptions.EngineOptions
+	aopt := config.HostOptions.AuthOptions
+	tlsVerify := "0"
+	if eopt.TLSVerify {
+		tlsVerify = "1"
+	}
+	env["DOCKER_TLS_VERIFY"] = tlsVerify
+	env["DOCKER_HOST"] = machine.URL
+	env["DOCKER_CERT_PATH"] = aopt.StorePath
+	env["DOCKER_MACHINE_NAME"] = name
+	return env, nil
 }

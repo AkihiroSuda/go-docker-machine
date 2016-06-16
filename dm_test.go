@@ -79,3 +79,24 @@ func TestClient(t *testing.T) {
 		t.Logf("%#v", info)
 	}
 }
+
+func TestEnv(t *testing.T) {
+	dm := ensureDM(t)
+	machines, err := dm.Machines()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, machine := range machines {
+		name := machine.Name
+		if machine.State != "Running" {
+			t.Logf("// %s is not running (%v)", name, machine.State)
+			continue
+		}
+		env, err := dm.Env(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("// env for %s", name)
+		t.Logf("%#v", env)
+	}
+}
